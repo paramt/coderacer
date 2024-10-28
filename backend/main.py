@@ -146,3 +146,8 @@ async def start_countdown(room_id):
             "time": TOTAL_TIME,
         }))
     asyncio.create_task(start_timer(room_id))  # Start the game timer
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)

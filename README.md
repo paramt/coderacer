@@ -24,7 +24,7 @@ npm start
 ```
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 9000
+python main.py
 ```
 
 - configure `TOTAL_TIME` in `./backend/config.py`
@@ -33,3 +33,4 @@ uvicorn main:app --reload --port 9000
 
 - cleanly handle player disconnects (inform other player)
 - dark mode
+- dockerize
