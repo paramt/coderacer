@@ -104,9 +104,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Add player to the room
                 rooms[room_id]["players"][username] = websocket
 
+                player_names = list(rooms[room_id]["players"].keys())
+
                 # Broadcast `player_joined` message to all players in the room
                 for ws in rooms[room_id]["players"].values():
-                    await ws.send_text(json.dumps({"type": "player_joined", "username": username}))
+                    await ws.send_text(json.dumps({"type": "player_joined", "players": player_names}))
 
                 # If two players have joined, start the countdown for both
                 if len(rooms[room_id]["players"]) == 2:

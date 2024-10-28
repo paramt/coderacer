@@ -73,7 +73,15 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
           setOpponent((prev) => ({ ...prev, results: result }));
         }
       } else if (data.type === "player_joined" && data.username !== currentPlayer.name) {
-        setOpponent((prev) => ({ ...prev, name: data.username }));
+        const [firstPlayer, secondPlayer] = data.players;
+        setCurrentPlayer((prev) => ({
+          ...prev,
+          name: firstPlayer === username ? firstPlayer : secondPlayer,
+        }));
+        setOpponent((prev) => ({
+          ...prev,
+          name: firstPlayer === username ? secondPlayer : firstPlayer,
+        }));
       } else if (data.type === "race_finished") {
         setRaceFinishedMessage(`${data.winner} solved the problem and won the game!`);
         setGameTimer(null);
