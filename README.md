@@ -21,7 +21,9 @@ uvicorn main:app --reload --port 9000
 
 ## todo
 
-- player disconnects
+- handle player disconnecs cleanly
 - player with same name joins
 - join race button
 - make sure p2 also has name of p1
+- copy button
+- cleaner name input

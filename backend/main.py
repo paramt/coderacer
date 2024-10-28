@@ -6,6 +6,7 @@ import random
 import asyncio
 
 from run_tests import run_tests
+from config import TOTAL_TIME
 
 app = FastAPI()
 
@@ -17,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Sample questions loaded from JSON (replace with real file loading if necessary)
+# Sample questions loaded from JSON
 with open("questions.json") as f:
     QUESTIONS = json.load(f)
 
@@ -31,6 +32,42 @@ def get_random_question():
 class JoinRoomPayload(BaseModel):
     username: str
     room_id: str
+
+async def start_timer(room_id):
+    countdown = TOTAL_TIME
+    while countdown > 0 and rooms[room_id]["status"] == "active":
+        await asyncio.sleep(1)
+        countdown -= 1
+
+    # If timer runs out, end the game with no winner
+    if countdown == 0 and rooms[room_id]["status"] == "active":
+        rooms[room_id]["status"] = "completed"
+        for ws in rooms[room_id]["players"].values():
+            await ws.send_text(json.dumps({
+                "type": "game_over",
+                "message": "Time's up! No one solved the problem.",
+            }))
+
+async def start_countdown(room_id):
+    rooms[room_id]["status"] = "countdown"
+    countdown = 5
+
+    # Send countdown messages to all players in the room
+    while countdown > 0:
+        for ws in rooms[room_id]["players"].values():
+            await ws.send_text(json.dumps({"type": "countdown", "countdown": countdown}))
+        countdown -= 1
+        await asyncio.sleep(1)
+
+    # Start the race and the 10-minute game timer
+    rooms[room_id]["status"] = "active"
+    for ws in rooms[room_id]["players"].values():
+        await ws.send_text(json.dumps({
+            "type": "race_started",
+            "question": rooms[room_id]["question"],
+            "time": TOTAL_TIME,
+        }))
+    asyncio.create_task(start_timer(room_id))  # Start the game timer
 
 # Define the WebSocket endpoint
 @app.websocket("/ws")
@@ -56,7 +93,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "players": {},
                         "question": get_random_question(),
                         "code_sync": {},
-                        "status": "waiting"  # waiting, countdown, active, completed
+                        "status": "waiting"
                     }
 
                 # Check if username is already taken in this room
@@ -68,7 +105,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 rooms[room_id]["players"][username] = websocket
 
                 # Broadcast `player_joined` message to all players in the room
-                for player, ws in rooms[room_id]["players"].items():
+                for ws in rooms[room_id]["players"].values():
                     await ws.send_text(json.dumps({"type": "player_joined", "username": username}))
 
                 # If two players have joined, start the countdown for both
@@ -90,16 +127,15 @@ async def websocket_endpoint(websocket: WebSocket):
                         }))
 
             # Handle `submit_code` message
-            if message['type'] == 'submit_code':
+            elif message['type'] == 'submit_code':
                 code = message['code']
                 question = rooms[room_id]["question"]
 
                 # Run the tests using the imported run_tests function
-                full_code = code
-                success, results = run_tests(full_code, question["public_tests"], question["private_tests"])
+                success, results = run_tests(code, question["public_tests"], question["private_tests"])
 
                 # Notify both players about the result
-                for player, ws in rooms[room_id]["players"].items():
+                for ws in rooms[room_id]["players"].values():
                     await ws.send_text(json.dumps({
                         "type": "submission_result",
                         "username": username,
@@ -107,13 +143,14 @@ async def websocket_endpoint(websocket: WebSocket):
                         "results": results
                     }))
 
-                # If successful submission, end the game
+                # If successful submission, end the game and announce the winner
                 if success:
                     rooms[room_id]["status"] = "completed"
-                    for player, ws in rooms[room_id]["players"].items():
+                    for ws in rooms[room_id]["players"].values():
                         await ws.send_text(json.dumps({
                             "type": "race_finished",
-                            "winner": username
+                            "winner": username,
+                            "message": f"{username} solved the problem and won the game!"
                         }))
 
     except WebSocketDisconnect:
@@ -122,24 +159,3 @@ async def websocket_endpoint(websocket: WebSocket):
             del rooms[room_id]["players"][username]
             if not rooms[room_id]["players"]:  # Delete room if empty
                 del rooms[room_id]
-
-async def start_countdown(room_id):
-    rooms[room_id]["status"] = "countdown"
-    countdown = 5
-
-    print(rooms[room_id]["players"])
-
-    # Send countdown messages to all players in the room
-    while countdown > 0:
-        for player, ws in rooms[room_id]["players"].items():
-            await ws.send_text(json.dumps({"type": "countdown", "countdown": countdown}))
-        countdown -= 1
-        await asyncio.sleep(1)
-
-    # Start the race
-    rooms[room_id]["status"] = "active"
-    for player, ws in rooms[room_id]["players"].items():
-        await ws.send_text(json.dumps({
-            "type": "race_started",
-            "question": rooms[room_id]["question"],
-        }))

@@ -25,8 +25,10 @@ interface PlayerInfo {
 
 const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) => {
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [gameTimer, setGameTimer] = useState<number | null>(null);
   const [question, setQuestion] = useState<any | null>(null);
   const [isRaceStarted, setIsRaceStarted] = useState(false);
+  const [raceFinishedMessage, setRaceFinishedMessage] = useState<string | null>(null);
 
   const [currentPlayer, setCurrentPlayer] = useState<PlayerInfo>({ name: username, code: "", results: null });
   const [opponent, setOpponent] = useState<PlayerInfo>({ name: "", code: "", results: null });
@@ -34,15 +36,19 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    socket.current = new WebSocket(WS_URL);
+    // Initialize WebSocket connection only once when component mounts
+    const ws = new WebSocket(WS_URL);
+    socket.current = ws;
 
-    socket.current.onopen = () => {
-      socket.current?.send(JSON.stringify({ type: "join_room", room_id: roomId, username }));
+    ws.onopen = () => {
+      console.log("WebSocket connection opened.");
+      ws.send(JSON.stringify({ type: "join_room", room_id: roomId, username }));
     };
 
-    socket.current.onmessage = (event) => {
+    ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log(data);
+
       if (data.type === "countdown") {
         setCountdown(data.countdown);
       } else if (data.type === "race_started") {
@@ -51,6 +57,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
         setOpponent((prev) => ({ ...prev, code: data.question.starting_code }));
         setIsRaceStarted(true);
         setCountdown(null);
+        setGameTimer(data.time);
       } else if (data.type === "code_update" && data.username !== currentPlayer.name) {
         setOpponent((prev) => ({ ...prev, code: data.code }));
       } else if (data.type === "submission_result") {
@@ -59,7 +66,6 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
           results: data.results,
         };
 
-        // Update the results for the appropriate player based on username
         if (data.username === username) {
           setCurrentPlayer((prev) => ({ ...prev, results: result }));
         } else {
@@ -67,21 +73,54 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
         }
       } else if (data.type === "player_joined" && data.username !== currentPlayer.name) {
         setOpponent((prev) => ({ ...prev, name: data.username }));
+      } else if (data.type === "race_finished") {
+        setRaceFinishedMessage(`${data.winner} solved the problem and won the game!`);
+        setGameTimer(null);
+        setIsRaceStarted(false);
+      } else if (data.type === "game_over") {
+        setRaceFinishedMessage("Time's up! No one solved the problem.");
+        setGameTimer(null);
+        setIsRaceStarted(false);
       }
     };
 
+    ws.onclose = () => console.log("WebSocket connection closed.");
+
     return () => {
-      socket.current?.close();
+      ws.close();
     };
   }, []);
 
+  useEffect(() => {
+    // Start game timer countdown only when race starts and timer is set
+    if (isRaceStarted && gameTimer !== null) {
+      const timerInterval = setInterval(() => {
+        setGameTimer((prev) => (prev !== null ? prev - 1 : null));
+      }, 1000);
+
+      // Clear interval when component unmounts or when timer stops
+      return () => clearInterval(timerInterval);
+    }
+  }, [isRaceStarted, gameTimer]);
+
   const handleCodeChange = (newCode: string) => {
     setCurrentPlayer((prev) => ({ ...prev, code: newCode }));
-    socket.current?.send(JSON.stringify({ type: "sync_code", room_id: roomId, username, code: newCode }));
+
+    // Wait for WebSocket connection to be open before sending
+    if (socket.current?.readyState === WebSocket.OPEN) {
+      socket.current.send(JSON.stringify({ type: "sync_code", room_id: roomId, username, code: newCode }));
+    }
   };
 
   const handleSubmit = () => {
     socket.current?.send(JSON.stringify({ type: "submit_code", room_id: roomId, username, code: currentPlayer.code }));
+  };
+
+  // Format time for the game timer display
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
   return (
@@ -89,6 +128,10 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
       <h1 className="text-2xl font-bold">Code Racer</h1>
 
       {countdown !== null && <p className="text-xl">Starting in: {countdown}</p>}
+
+      {gameTimer !== null && <p className="text-xl">Time Remaining: {formatTime(gameTimer)}</p>}
+
+      {raceFinishedMessage && <p className="text-xl font-bold">{raceFinishedMessage}</p>}
 
       {question && isRaceStarted && (
         <div>
@@ -167,7 +210,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
         </div>
       )}
 
-      {!isRaceStarted && !countdown && (
+      {!isRaceStarted && !countdown && !raceFinishedMessage && (
         <div className="p-4 border rounded">
           <p>
             No one else is here yet! Invite your friends with the link {BASE_URL}/competition/
