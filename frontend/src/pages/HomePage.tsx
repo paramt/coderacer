@@ -6,7 +6,7 @@ export const HomePage: React.FC = () => {
 
   const handleCreateRoom = () => {
     const roomId = uuidv4(); // Generate unique room ID
-    navigate(`/competition/${roomId}`);
+    navigate(`/race/${roomId}`);
   };
 
   return (

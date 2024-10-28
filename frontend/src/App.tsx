@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, useParams } from "react-router-dom";
-import { CompetitionPage } from "./pages/CompetitionPage";
+import { RacePage } from "./pages/RacePage";
 import { HomePage } from "./pages/HomePage";
 
 const App: React.FC = () => {
@@ -8,7 +8,7 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/competition/:roomId" element={<CompetitionPage />} />
+        <Route path="/race/:roomId" element={<RacePage />} />
       </Routes>
     </Router>
   );

@@ -12,7 +12,7 @@ import { ResultsPane } from "../components/ResultsPane";
 import { PlayerInfo, ResultMessage } from "../types";
 import { NameInput } from "../components/NameInput";
 
-export const CompetitionPage: React.FC = () => {
+export const RacePage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const [username, setUsername] = useState<string>("");
   const [isUsernameSet, setIsUsernameSet] = useState(false);
@@ -204,7 +204,7 @@ export const CompetitionPage: React.FC = () => {
       {!isRaceStarted && !countdown && !raceFinishedMessage && (
         <div className="p-4 border rounded flex flex-col items-center">
           <p className="pb-2">No one else is here yet! Invite your friends using this link:</p>
-          <CopyLink url={`${BASE_URL}/competition/${roomId}`} />
+          <CopyLink url={`${BASE_URL}/race/${roomId}`} />
         </div>
       )}
     </div>
