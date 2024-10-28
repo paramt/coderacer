@@ -32,6 +32,6 @@ python main.py
 ## Todo if I had more time
 
 - cleanly handle player disconnects (inform other player)
-- UI for restarting new gamae
+- UI for restarting new game
 - dark mode
 - dockerize

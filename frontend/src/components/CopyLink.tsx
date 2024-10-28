@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 
-interface LinkCopyProps {
+interface CopyLinkProps {
   url: string;
 }
 
-export const CopyLink: React.FC<LinkCopyProps> = ({ url }) => {
+export const CopyLink: React.FC<CopyLinkProps> = ({ url }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
