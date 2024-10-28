@@ -49,4 +49,4 @@ def run_tests(submitted_code, public_tests, private_tests):
         return all_tests_passed, results
 
     except Exception as e:
-        return False, f"Code execution error: {traceback.format_exc()}"
+        return False, [f"Code execution error: {traceback.format_exc()}"]
