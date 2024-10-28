@@ -6,6 +6,7 @@ import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/edit/matchbrackets";
 
 import { BASE_URL, WS_URL } from "../constants";
+import { CopyLink } from "../components/CopyLink";
 
 interface CompetitionPageProps {
   roomId: string;
@@ -211,11 +212,9 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
       )}
 
       {!isRaceStarted && !countdown && !raceFinishedMessage && (
-        <div className="p-4 border rounded">
-          <p>
-            No one else is here yet! Invite your friends with the link {BASE_URL}/competition/
-            {roomId}
-          </p>
+        <div className="p-4 border rounded flex flex-col items-center">
+          <p className="pb-2">No one else is here yet! Invite your friends using this link:</p>
+          <CopyLink url={`${BASE_URL}/competition/${roomId}`} />
         </div>
       )}
     </div>
