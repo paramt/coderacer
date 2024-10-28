@@ -4,7 +4,7 @@ import "codemirror/lib/codemirror.css";
 import "codemirror/mode/python/python";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/edit/matchbrackets";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { BASE_URL, WS_URL } from "../constants";
 import { CopyLink } from "../components/CopyLink";
@@ -26,6 +26,7 @@ export const RacePage: React.FC = () => {
   const [currentPlayer, setCurrentPlayer] = useState<PlayerInfo>({ name: username, code: "", results: null });
   const [opponent, setOpponent] = useState<PlayerInfo>({ name: "Opponent", code: "", results: null });
 
+  const navigate = useNavigate();
   const socket = useRef<WebSocket | null>(null);
 
   const setupWebsocket = () => {
@@ -79,10 +80,11 @@ export const RacePage: React.FC = () => {
         setRaceFinishedMessage("Time's up! No one solved the problem.");
         setGameTimer(null);
         setIsRaceStarted(false);
+      } else if (data.type === "error") {
+        alert(data.message);
+        navigate(0); // refresh
       }
     };
-
-    ws.onclose = () => console.log("WebSocket connection closed.");
 
     return () => {
       ws.close();

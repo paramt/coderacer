@@ -98,11 +98,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # Check if username is already taken in this room
                 if username in rooms[room_id]["players"]:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "name already taken!"}))
+                    await websocket.send_text(json.dumps({"type": "error", "message": "name already taken"}))
+                    continue
+
+                if len(rooms[room_id]["players"]) >= 2:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "room is full"}))
                     continue
 
                 # Add player to the room
                 rooms[room_id]["players"][username] = websocket
+
+                print("overwriting player " + username)
 
                 player_names = list(rooms[room_id]["players"].keys())
 
