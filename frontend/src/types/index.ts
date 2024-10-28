@@ -1,6 +1,6 @@
 export interface ResultMessage {
   success: boolean;
-  results: string[];
+  results: string[]; // array of results from each test case
 }
 
 export interface PlayerInfo {

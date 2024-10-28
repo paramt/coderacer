@@ -33,13 +33,11 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
     socket.current = ws;
 
     ws.onopen = () => {
-      console.log("WebSocket connection opened.");
       ws.send(JSON.stringify({ type: "join_room", room_id: roomId, username }));
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log(data);
 
       if (data.type === "countdown") {
         setCountdown(data.countdown);
