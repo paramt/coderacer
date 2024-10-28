@@ -22,14 +22,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            # Receive message from client
             data = await websocket.receive_text()
             message = json.loads(data)
 
-            # Handle `join_room` message
-            if message['type'] == 'join_room':
-                username = message['username']
-                room_id = message['room_id']
+            if message["type"] == "join_room":
+                username = message["username"]
+                room_id = message["room_id"]
 
                 # Create room if not exists and add WebSocket connection
                 if room_id not in rooms:
@@ -45,6 +43,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps({"type": "error", "message": "name already taken"}))
                     continue
 
+                # Check room size
                 if len(rooms[room_id]["players"]) >= 2:
                     await websocket.send_text(json.dumps({"type": "error", "message": "room is full"}))
                     continue
@@ -63,8 +62,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     await start_countdown(room_id)
 
             # Handle `sync_code` message
-            elif message['type'] == 'sync_code':
-                code = message['code']
+            elif message["type"] == "sync_code":
+                code = message["code"]
                 rooms[room_id]["code_sync"][username] = code
 
                 # Broadcast code update to other player(s)
@@ -77,8 +76,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         }))
 
             # Handle `submit_code` message
-            elif message['type'] == 'submit_code':
-                code = message['code']
+            elif message["type"] == "submit_code":
+                code = message["code"]
                 question = rooms[room_id]["question"]
 
                 # Run the tests using the imported run_tests function
