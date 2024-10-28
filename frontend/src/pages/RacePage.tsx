@@ -72,7 +72,7 @@ export const RacePage: React.FC = () => {
           name: firstPlayer === username ? secondPlayer : firstPlayer,
         }));
       } else if (data.type === "race_finished") {
-        setRaceFinishedMessage(`${data.winner} solved the problem and won the game!`);
+        setRaceFinishedMessage(`${data.winner} won!`);
         setGameTimer(null);
         setIsRaceStarted(false);
       } else if (data.type === "game_over") {

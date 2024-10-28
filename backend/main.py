@@ -1,6 +1,4 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import json
 import random
 import asyncio
@@ -10,66 +8,12 @@ from config import TOTAL_TIME
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Sample questions loaded from JSON
 with open("questions.json") as f:
     QUESTIONS = json.load(f)
 
-# Room data structure
 rooms = {}
 
-# Helper function to get a random question
-def get_random_question():
-    return random.choice(QUESTIONS)
 
-class JoinRoomPayload(BaseModel):
-    username: str
-    room_id: str
-
-async def start_timer(room_id):
-    countdown = TOTAL_TIME
-    while countdown > 0 and rooms[room_id]["status"] == "active":
-        await asyncio.sleep(1)
-        countdown -= 1
-
-    # If timer runs out, end the game with no winner
-    if countdown == 0 and rooms[room_id]["status"] == "active":
-        rooms[room_id]["status"] = "completed"
-        for ws in rooms[room_id]["players"].values():
-            await ws.send_text(json.dumps({
-                "type": "game_over",
-                "message": "Time's up! No one solved the problem.",
-            }))
-
-async def start_countdown(room_id):
-    rooms[room_id]["status"] = "countdown"
-    countdown = 5
-
-    # Send countdown messages to all players in the room
-    while countdown > 0:
-        for ws in rooms[room_id]["players"].values():
-            await ws.send_text(json.dumps({"type": "countdown", "countdown": countdown}))
-        countdown -= 1
-        await asyncio.sleep(1)
-
-    # Start the race and the 10-minute game timer
-    rooms[room_id]["status"] = "active"
-    for ws in rooms[room_id]["players"].values():
-        await ws.send_text(json.dumps({
-            "type": "race_started",
-            "question": rooms[room_id]["question"],
-            "time": TOTAL_TIME,
-        }))
-    asyncio.create_task(start_timer(room_id))  # Start the game timer
-
-# Define the WebSocket endpoint
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -91,7 +35,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if room_id not in rooms:
                     rooms[room_id] = {
                         "players": {},
-                        "question": get_random_question(),
+                        "question": random.choice(QUESTIONS),
                         "code_sync": {},
                         "status": "waiting"
                     }
@@ -167,3 +111,40 @@ async def websocket_endpoint(websocket: WebSocket):
             del rooms[room_id]["players"][username]
             if not rooms[room_id]["players"]:  # Delete room if empty
                 del rooms[room_id]
+
+async def start_timer(room_id):
+    countdown = TOTAL_TIME
+    while countdown > 0 and rooms[room_id]["status"] == "active":
+        await asyncio.sleep(1)
+        countdown -= 1
+
+    # If timer runs out, end the game with no winner
+    if countdown == 0 and rooms[room_id]["status"] == "active":
+        rooms[room_id]["status"] = "completed"
+        for ws in rooms[room_id]["players"].values():
+            await ws.send_text(json.dumps({
+                "type": "game_over",
+                "message": "Time's up! No one solved the problem.",
+            }))
+
+
+async def start_countdown(room_id):
+    rooms[room_id]["status"] = "countdown"
+    countdown = 5
+
+    # Send countdown messages to all players in the room
+    while countdown > 0:
+        for ws in rooms[room_id]["players"].values():
+            await ws.send_text(json.dumps({"type": "countdown", "countdown": countdown}))
+        countdown -= 1
+        await asyncio.sleep(1)
+
+    # Start the race and the 10-minute game timer
+    rooms[room_id]["status"] = "active"
+    for ws in rooms[room_id]["players"].values():
+        await ws.send_text(json.dumps({
+            "type": "race_started",
+            "question": rooms[room_id]["question"],
+            "time": TOTAL_TIME,
+        }))
+    asyncio.create_task(start_timer(room_id))  # Start the game timer
