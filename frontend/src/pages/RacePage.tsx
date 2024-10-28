@@ -1,4 +1,3 @@
-// RacePage.tsx
 import React, { useEffect, useState, useRef } from "react";
 import AceEditor from "react-ace";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,7 +7,7 @@ import "ace-builds/src-noconflict/theme-github";
 import { BASE_URL, editorOptions, WS_URL } from "../constants";
 import { CopyLink } from "../components/CopyLink";
 import { ResultsPane } from "../components/ResultsPane";
-import { PlayerInfo, ResultMessage } from "../types";
+import { PlayerInfo, ResultMessage, MessageType } from "../types";
 import { NameInput } from "../components/NameInput";
 
 export const RacePage: React.FC = () => {
@@ -33,55 +32,73 @@ export const RacePage: React.FC = () => {
     socket.current = ws;
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "join_room", room_id: roomId, username }));
+      ws.send(JSON.stringify({ type: MessageType.JOIN_ROOM, room_id: roomId, username }));
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.type === "countdown") {
-        setCountdown(data.countdown);
-      } else if (data.type === "race_started") {
-        setQuestion(data.question);
-        setCurrentPlayer((prev) => ({ ...prev, code: data.question.starting_code }));
-        setOpponent((prev) => ({ ...prev, code: data.question.starting_code }));
-        setIsRaceStarted(true);
-        setCountdown(null);
-        setGameTimer(data.time);
-      } else if (data.type === "code_update" && data.username !== currentPlayer.name) {
-        setOpponent((prev) => ({ ...prev, code: data.code }));
-      } else if (data.type === "submission_result") {
-        const result: ResultMessage = {
-          success: data.success,
-          results: data.results,
-        };
+      switch (data.type) {
+        case MessageType.COUNTDOWN:
+          setCountdown(data.countdown);
+          break;
 
-        if (data.username === username) {
-          setCurrentPlayer((prev) => ({ ...prev, results: result }));
-        } else {
-          setOpponent((prev) => ({ ...prev, results: result }));
-        }
-      } else if (data.type === "player_joined" && data.username !== currentPlayer.name) {
-        const [firstPlayer, secondPlayer] = data.players;
-        setCurrentPlayer((prev) => ({
-          ...prev,
-          name: firstPlayer === username ? firstPlayer : secondPlayer,
-        }));
-        setOpponent((prev) => ({
-          ...prev,
-          name: firstPlayer === username ? secondPlayer : firstPlayer,
-        }));
-      } else if (data.type === "race_finished") {
-        setRaceFinishedMessage(`${data.winner} won!`);
-        setGameTimer(null);
-        setIsRaceStarted(false);
-      } else if (data.type === "game_over") {
-        setRaceFinishedMessage("Time's up! No one solved the problem.");
-        setGameTimer(null);
-        setIsRaceStarted(false);
-      } else if (data.type === "error") {
-        alert(data.message);
-        navigate(0); // refresh
+        case MessageType.RACE_STARTED:
+          setQuestion(data.question);
+          setCurrentPlayer((prev) => ({ ...prev, code: data.question.starting_code }));
+          setOpponent((prev) => ({ ...prev, code: data.question.starting_code }));
+          setIsRaceStarted(true);
+          setCountdown(null);
+          setGameTimer(data.time);
+          break;
+
+        case MessageType.CODE_UPDATE:
+          if (data.username !== currentPlayer.name) {
+            setOpponent((prev) => ({ ...prev, code: data.code }));
+          }
+          break;
+
+        case MessageType.SUBMISSION_RESULT:
+          const result: ResultMessage = {
+            success: data.success,
+            results: data.results,
+          };
+
+          if (data.username === username) {
+            setCurrentPlayer((prev) => ({ ...prev, results: result }));
+          } else {
+            setOpponent((prev) => ({ ...prev, results: result }));
+          }
+          break;
+
+        case MessageType.PLAYER_JOINED:
+          const [firstPlayer, secondPlayer] = data.players;
+          setCurrentPlayer((prev) => ({
+            ...prev,
+            name: firstPlayer === username ? firstPlayer : secondPlayer,
+          }));
+          setOpponent((prev) => ({
+            ...prev,
+            name: firstPlayer === username ? secondPlayer : firstPlayer,
+          }));
+          break;
+
+        case MessageType.RACE_FINISHED:
+          setRaceFinishedMessage(`${data.winner} won!`);
+          setGameTimer(null);
+          setIsRaceStarted(false);
+          break;
+
+        case MessageType.GAME_OVER:
+          setRaceFinishedMessage("Time's up! No one solved the problem.");
+          setGameTimer(null);
+          setIsRaceStarted(false);
+          break;
+
+        case MessageType.ERROR:
+          alert(data.message);
+          navigate(0); // refresh
+          break;
       }
     };
 
@@ -104,12 +121,14 @@ export const RacePage: React.FC = () => {
     setCurrentPlayer((prev) => ({ ...prev, code: newCode }));
 
     if (socket.current?.readyState === WebSocket.OPEN) {
-      socket.current.send(JSON.stringify({ type: "sync_code", room_id: roomId, username, code: newCode }));
+      socket.current.send(JSON.stringify({ type: MessageType.CODE_UPDATE, room_id: roomId, username, code: newCode }));
     }
   };
 
   const handleSubmit = () => {
-    socket.current?.send(JSON.stringify({ type: "submit_code", room_id: roomId, username, code: currentPlayer.code }));
+    socket.current?.send(
+      JSON.stringify({ type: MessageType.SUBMISSION_RESULT, room_id: roomId, username, code: currentPlayer.code })
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -151,7 +170,7 @@ export const RacePage: React.FC = () => {
             <p className="whitespace-pre-line">{question.description}</p>
           </div>
           <div className="flex flex-row w-full space-x-4">
-            <div className="flex flex-col lg:flex-row  w-full space-x-4">
+            <div className="flex flex-col lg:flex-row w-full space-x-4">
               <div className="lg:w-1/2">
                 <h3 className="font-bold text-center">{currentPlayer.name}'s Editor</h3>
                 <AceEditor value={currentPlayer.code} onChange={handleCodeChange} name="playerEditor" {...editorOptions} />
