@@ -4,18 +4,19 @@ import "codemirror/lib/codemirror.css";
 import "codemirror/mode/python/python";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/edit/matchbrackets";
+import { useParams } from "react-router-dom";
 
 import { BASE_URL, WS_URL } from "../constants";
 import { CopyLink } from "../components/CopyLink";
 import { ResultsPane } from "../components/ResultsPane";
 import { PlayerInfo, ResultMessage } from "../types";
+import { NameInput } from "../components/NameInput";
 
-interface CompetitionPageProps {
-  roomId: string;
-  username: string;
-}
+export const CompetitionPage: React.FC = () => {
+  const { roomId } = useParams<{ roomId: string }>();
+  const [username, setUsername] = useState<string>("");
+  const [isUsernameSet, setIsUsernameSet] = useState(false);
 
-const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [gameTimer, setGameTimer] = useState<number | null>(null);
   const [question, setQuestion] = useState<any | null>(null);
@@ -27,8 +28,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
 
   const socket = useRef<WebSocket | null>(null);
 
-  useEffect(() => {
-    // Initialize WebSocket connection only once when component mounts
+  const setupWebsocket = () => {
     const ws = new WebSocket(WS_URL);
     socket.current = ws;
 
@@ -87,7 +87,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
     return () => {
       ws.close();
     };
-  }, []);
+  };
 
   useEffect(() => {
     // Start game timer countdown only when race starts and timer is set
@@ -120,6 +120,22 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
+
+  if (!roomId) {
+    return <p>Error: Room ID is missing.</p>;
+  }
+
+  const handleUsernameSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (username.trim()) {
+      setIsUsernameSet(true);
+      setupWebsocket();
+    }
+  };
+
+  if (!isUsernameSet) {
+    return <NameInput username={username} setUsername={setUsername} onSubmit={handleUsernameSubmit} />;
+  }
 
   return (
     <div className="w-full flex flex-col items-center p-4 space-y-4">
@@ -194,5 +210,3 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
     </div>
   );
 };
-
-export default CompetitionPage;

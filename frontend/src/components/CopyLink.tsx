@@ -19,8 +19,8 @@ export const CopyLink: React.FC<LinkCopyProps> = ({ url }) => {
 
   return (
     <div className="flex items-center">
-      <p className="bg-slate-300 rounded-l-md p-2 ">{url}</p>
-      <button className="bg-blue-950 rounded-r-md text-white h-full p-2 hover:bg-blue-900" onClick={handleCopy}>
+      <p className="bg-slate-200 rounded-l-md p-2 ">{url}</p>
+      <button className="bg-blue-500 rounded-r-md text-white h-full p-2 hover:bg-blue-600" onClick={handleCopy}>
         {copied ? "Copied!" : "Copy"}
       </button>
     </div>
