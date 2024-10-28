@@ -133,7 +133,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
   };
 
   return (
-    <div className="flex flex-col items-center p-4 space-y-4">
+    <div className="w-full flex flex-col items-center p-4 space-y-4">
       <h1 className="text-2xl font-bold">Code Racer</h1>
 
       {countdown !== null && <p className="text-xl">Starting in: {countdown}</p>}
@@ -143,10 +143,10 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
       {raceFinishedMessage && <p className="text-xl font-bold">{raceFinishedMessage}</p>}
 
       {question && isRaceStarted && (
-        <div>
+        <div className="w-full">
           <div className="p-4 border rounded">
             <h2 className="font-bold">{question.title}</h2>
-            <p>{question.description}</p>
+            <p className="whitespace-pre-line">{question.description}</p>
           </div>
           <div className="flex flex-row w-full space-x-4">
             <div className="flex w-full space-x-4">
