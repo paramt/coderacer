@@ -121,13 +121,13 @@ export const RacePage: React.FC = () => {
     setCurrentPlayer((prev) => ({ ...prev, code: newCode }));
 
     if (socket.current?.readyState === WebSocket.OPEN) {
-      socket.current.send(JSON.stringify({ type: MessageType.CODE_UPDATE, room_id: roomId, username, code: newCode }));
+      socket.current.send(JSON.stringify({ type: MessageType.SYNC_CODE, room_id: roomId, username, code: newCode }));
     }
   };
 
   const handleSubmit = () => {
     socket.current?.send(
-      JSON.stringify({ type: MessageType.SUBMISSION_RESULT, room_id: roomId, username, code: currentPlayer.code })
+      JSON.stringify({ type: MessageType.SUBMIT_CODE, room_id: roomId, username, code: currentPlayer.code })
     );
   };
 

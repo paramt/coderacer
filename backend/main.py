@@ -52,8 +52,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Add player to the room
                 rooms[room_id]["players"][username] = websocket
 
-                print("overwriting player " + username)
-
                 player_names = list(rooms[room_id]["players"].keys())
 
                 # Broadcast `player_joined` message to all players in the room
