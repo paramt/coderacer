@@ -1,12 +1,11 @@
+// RacePage.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { Controlled as CodeMirror } from "react-codemirror2";
-import "codemirror/lib/codemirror.css";
-import "codemirror/mode/python/python";
-import "codemirror/addon/edit/closebrackets";
-import "codemirror/addon/edit/matchbrackets";
+import AceEditor from "react-ace";
 import { useParams, useNavigate } from "react-router-dom";
+import "ace-builds/src-noconflict/mode-python";
+import "ace-builds/src-noconflict/theme-github";
 
-import { BASE_URL, WS_URL } from "../constants";
+import { BASE_URL, editorOptions, WS_URL } from "../constants";
 import { CopyLink } from "../components/CopyLink";
 import { ResultsPane } from "../components/ResultsPane";
 import { PlayerInfo, ResultMessage } from "../types";
@@ -92,13 +91,11 @@ export const RacePage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Start game timer countdown only when race starts and timer is set
     if (isRaceStarted && gameTimer !== null) {
       const timerInterval = setInterval(() => {
         setGameTimer((prev) => (prev !== null ? prev - 1 : null));
       }, 1000);
 
-      // Clear interval when component unmounts or when timer stops
       return () => clearInterval(timerInterval);
     }
   }, [isRaceStarted, gameTimer]);
@@ -106,7 +103,6 @@ export const RacePage: React.FC = () => {
   const handleCodeChange = (newCode: string) => {
     setCurrentPlayer((prev) => ({ ...prev, code: newCode }));
 
-    // Wait for WebSocket connection to be open before sending
     if (socket.current?.readyState === WebSocket.OPEN) {
       socket.current.send(JSON.stringify({ type: "sync_code", room_id: roomId, username, code: newCode }));
     }
@@ -116,7 +112,6 @@ export const RacePage: React.FC = () => {
     socket.current?.send(JSON.stringify({ type: "submit_code", room_id: roomId, username, code: currentPlayer.code }));
   };
 
-  // Format time for the game timer display
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -159,22 +154,7 @@ export const RacePage: React.FC = () => {
             <div className="flex flex-col lg:flex-row  w-full space-x-4">
               <div className="lg:w-1/2">
                 <h3 className="font-bold text-center">{currentPlayer.name}'s Editor</h3>
-                <CodeMirror
-                  value={currentPlayer.code}
-                  options={{
-                    mode: "python",
-                    lineNumbers: true,
-                    theme: "default",
-                    indentUnit: 4,
-                    smartIndent: true,
-                    tabSize: 4,
-                    indentWithTabs: true,
-                    autoCloseBrackets: "()[]{}''\"\"",
-                    matchBrackets: true,
-                    electricChars: true,
-                  }}
-                  onBeforeChange={(editor, data, value) => handleCodeChange(value)}
-                />
+                <AceEditor value={currentPlayer.code} onChange={handleCodeChange} name="playerEditor" {...editorOptions} />
                 <button onClick={handleSubmit} className="mt-4 bg-blue-500 text-white py-1 px-2 rounded">
                   Submit Code
                 </button>
@@ -182,16 +162,7 @@ export const RacePage: React.FC = () => {
 
               <div className="lg:w-1/2">
                 <h3 className="font-bold text-center">{opponent.name || "Opponent"}'s Editor</h3>
-                <CodeMirror
-                  value={opponent.code}
-                  options={{
-                    mode: "python",
-                    lineNumbers: true,
-                    theme: "default",
-                    readOnly: true,
-                  }}
-                  onBeforeChange={() => {}}
-                />
+                <AceEditor value={opponent.code} name="opponentEditor" readOnly {...editorOptions} />
               </div>
             </div>
           </div>
