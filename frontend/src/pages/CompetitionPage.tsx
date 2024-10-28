@@ -149,8 +149,8 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
             <p className="whitespace-pre-line">{question.description}</p>
           </div>
           <div className="flex flex-row w-full space-x-4">
-            <div className="flex w-full space-x-4">
-              <div className="w-1/2">
+            <div className="flex flex-col lg:flex-row  w-full space-x-4">
+              <div className="lg:w-1/2">
                 <h3 className="font-bold text-center">{currentPlayer.name}'s Editor</h3>
                 <CodeMirror
                   value={currentPlayer.code}
@@ -173,7 +173,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
                 </button>
               </div>
 
-              <div className="w-1/2">
+              <div className="lg:w-1/2">
                 <h3 className="font-bold text-center">{opponent.name || "Opponent"}'s Editor</h3>
                 <CodeMirror
                   value={opponent.code}
@@ -193,7 +193,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
             <div className="w-full">
               <h4 className="font-bold">{currentPlayer.name}'s Results</h4>
               {currentPlayer.results ? (
-                currentPlayer.results.results?.map((result, index) => (
+                currentPlayer?.results?.results?.map((result, index) => (
                   <p key={index} className={`${result.includes("passed") ? "text-green-700" : "text-red-700"}`}>
                     {result}
                   </p>
@@ -206,7 +206,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
             <div className="w-full">
               <h4 className="font-bold">{opponent.name || "Opponent"}'s Results</h4>
               {opponent.results ? (
-                opponent.results.results.map((result, index) => (
+                opponent?.results?.results?.map((result, index) => (
                   <p key={index} className={`${result.includes("passed") ? "text-green-700" : "text-red-700"}`}>
                     {result}
                   </p>
