@@ -7,21 +7,12 @@ import "codemirror/addon/edit/matchbrackets";
 
 import { BASE_URL, WS_URL } from "../constants";
 import { CopyLink } from "../components/CopyLink";
+import { ResultsPane } from "../components/ResultsPane";
+import { PlayerInfo, ResultMessage } from "../types";
 
 interface CompetitionPageProps {
   roomId: string;
   username: string;
-}
-
-interface ResultMessage {
-  success: boolean;
-  results: string[];
-}
-
-interface PlayerInfo {
-  name: string;
-  code: string;
-  results: ResultMessage | null;
 }
 
 const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) => {
@@ -32,7 +23,7 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
   const [raceFinishedMessage, setRaceFinishedMessage] = useState<string | null>(null);
 
   const [currentPlayer, setCurrentPlayer] = useState<PlayerInfo>({ name: username, code: "", results: null });
-  const [opponent, setOpponent] = useState<PlayerInfo>({ name: "", code: "", results: null });
+  const [opponent, setOpponent] = useState<PlayerInfo>({ name: "Opponent", code: "", results: null });
 
   const socket = useRef<WebSocket | null>(null);
 
@@ -190,31 +181,8 @@ const CompetitionPage: React.FC<CompetitionPageProps> = ({ roomId, username }) =
           </div>
 
           <div className="w-full mt-4 p-4 border rounded flex">
-            <div className="w-full">
-              <h4 className="font-bold">{currentPlayer.name}'s Results</h4>
-              {currentPlayer.results ? (
-                currentPlayer?.results?.results?.map((result, index) => (
-                  <p key={index} className={`${result.includes("passed") ? "text-green-700" : "text-red-700"}`}>
-                    {result}
-                  </p>
-                ))
-              ) : (
-                <p>No results yet. Submit your code to see results.</p>
-              )}
-            </div>
-
-            <div className="w-full">
-              <h4 className="font-bold">{opponent.name || "Opponent"}'s Results</h4>
-              {opponent.results ? (
-                opponent?.results?.results?.map((result, index) => (
-                  <p key={index} className={`${result.includes("passed") ? "text-green-700" : "text-red-700"}`}>
-                    {result}
-                  </p>
-                ))
-              ) : (
-                <p>No results from opponent yet.</p>
-              )}
-            </div>
+            <ResultsPane name={currentPlayer.name} results={currentPlayer.results} />
+            <ResultsPane name={opponent.name} results={opponent.results} />
           </div>
         </div>
       )}
